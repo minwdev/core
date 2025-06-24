@@ -3,22 +3,25 @@
 // Gibbon: the flexible, open school platform
 // Configuration file for Supabase
 
-// Supabase Configuration
-$supabaseUrl = 'https://your-project.supabase.co';
-$supabaseKey = 'your-anon-key';
-$supabaseServiceKey = 'your-service-role-key'; // For server-side operations
+// Supabase Configuration (placeholder - replace with actual values)
+$supabaseUrl = '';
+$supabaseKey = '';
+$supabaseServiceKey = '';
 
 // System Configuration
-$guid = 'your-unique-guid-here';
+$guid = 'gibbon-' . uniqid();
 
-// Database connection via Supabase
-$databaseServer = '';
-$databaseName = '';
-$databaseUsername = '';
-$databasePassword = '';
+// Database connection for development
+$databaseServer = 'localhost';
+$databaseName = 'gibbon_dev';
+$databaseUsername = 'gibbon';
+$databasePassword = 'gibbon123';
+$databasePort = '';
 
-// Supabase specific settings
-$absoluteURL = 'https://your-repl-name.your-username.repl.co';
+// Get the current URL dynamically
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost:5000';
+$absoluteURL = $protocol . '://' . $host;
 $absolutePath = __DIR__;
 
 // System settings

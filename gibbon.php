@@ -78,28 +78,16 @@ if (!$gibbon->isInstalled() && !$gibbon->isInstalling()) {
 if ($gibbon->isInstalled()) {
     $pdo = null;
     
-    // Check if using Supabase or MySQL
-    if (!empty($gibbon->getConfig('supabaseUrl'))) {
-        $supabaseConnector = new Gibbon\Database\SupabaseConnector();
+    // Use MySQL connector for now (Supabase setup incomplete)
+    $mysqlConnector = new Gibbon\Database\MySqlConnector();
 
-        // Connect to Supabase
-        $pdo = $supabaseConnector->connect($gibbon->getConfig());
-        if ($pdo) {
-            $connection2 = $pdo->getConnection();
-            $container->add('db', $pdo);
-            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
-        }
-    } else {
-        $mysqlConnector = new Gibbon\Database\MySqlConnector();
-
-        // Display a static error message for database connections after install.
-        $pdo = $mysqlConnector->connect($gibbon->getConfig());
-        if ($pdo) {
-            // Add the database to the container
-            $connection2 = $pdo->getConnection();
-            $container->add('db', $pdo);
-            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
-        }
+    // Connect to MySQL/MariaDB
+    $pdo = $mysqlConnector->connect($gibbon->getConfig());
+    if ($pdo) {
+        // Add the database to the container
+        $connection2 = $pdo->getConnection();
+        $container->add('db', $pdo);
+        $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
     }
 
     if ($pdo) {
