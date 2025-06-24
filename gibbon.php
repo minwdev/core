@@ -113,7 +113,6 @@ if ($gibbon->isInstalled()) {
             include __DIR__.'/error.php';
             exit;
         }
-
     } else {
         if (!$gibbon->isInstalling()) {
             $message = sprintf(__('A database connection could not be established. Please %1$stry again%2$s.'), '', '');
@@ -121,7 +120,6 @@ if ($gibbon->isInstalled()) {
             exit;
         }
     }
-}
 
 if (!defined('SESSION_TABLE_AVAILABLE')) {
     define('SESSION_TABLE_AVAILABLE', false);
