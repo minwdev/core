@@ -125,6 +125,7 @@ if ($gibbon->isInstalled()) {
             exit;
         }
     }
+}
 
 if (!defined('SESSION_TABLE_AVAILABLE')) {
     define('SESSION_TABLE_AVAILABLE', false);
