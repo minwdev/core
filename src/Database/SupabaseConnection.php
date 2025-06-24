@@ -6,7 +6,8 @@ namespace Gibbon\Database;
 use Psr\Log\LoggerInterface;
 use Gibbon\Database\Result;
 use Gibbon\Contracts\Database\Connection as ConnectionInterface;
-use Supabase\Client;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Supabase Database Connection.
@@ -14,11 +15,21 @@ use Supabase\Client;
 class SupabaseConnection implements ConnectionInterface
 {
     /**
-     * The active Supabase client.
+     * The active Guzzle HTTP client.
      *
-     * @var \Supabase\Client
+     * @var \GuzzleHttp\Client
      */
-    protected $supabase;
+    protected $httpClient;
+
+    /**
+     * @var string
+     */
+    protected $supabaseUrl;
+
+    /**
+     * @var string
+     */
+    protected $supabaseKey;
 
     /**
      * @var bool
@@ -46,24 +57,34 @@ class SupabaseConnection implements ConnectionInterface
     protected $errorMessage = null;
 
     /**
-     * Create the connection wrapper around a Supabase client.
+     * Create the connection wrapper around a Guzzle HTTP client.
      *
-     * @param \Supabase\Client  $supabase
      * @param array $config
      */
-    public function __construct(Client $supabase, array $config = [])
+    public function __construct(array $config = [])
     {
-        $this->supabase = $supabase;
+        $this->supabaseUrl = $config['supabaseUrl'] ?? '';
+        $this->supabaseKey = $config['supabaseKey'] ?? '';
+        
+        $this->httpClient = new Client([
+            'base_uri' => $this->supabaseUrl . '/rest/v1/',
+            'headers' => [
+                'apikey' => $this->supabaseKey,
+                'Authorization' => 'Bearer ' . $this->supabaseKey,
+                'Content-Type' => 'application/json',
+                'Prefer' => 'return=representation'
+            ]
+        ]);
     }
 
     /**
-     * Get the current Supabase client.
+     * Get the current HTTP client.
      *
-     * @return \Supabase\Client
+     * @return \GuzzleHttp\Client
      */
     public function getConnection()
     {
-        return $this->supabase;
+        return $this->httpClient;
     }
 
     /**
@@ -183,52 +204,65 @@ class SupabaseConnection implements ConnectionInterface
     }
 
     /**
-     * Execute the parsed query using Supabase client.
+     * Execute the parsed query using Supabase HTTP client.
      *
      * @param array $parsedQuery
-     * @return mixed
+     * @return array
      */
     protected function executeSupabaseQuery($parsedQuery)
     {
-        switch ($parsedQuery['type']) {
-            case 'select':
-                $query = $this->supabase->from($parsedQuery['table'])->select($parsedQuery['columns']);
-                
-                if (!empty($parsedQuery['where'])) {
-                    foreach ($parsedQuery['where'] as $condition) {
-                        $query = $query->eq($condition['column'], $condition['value']);
-                    }
-                }
-                
-                return $query->execute();
-                
-            case 'insert':
-                return $this->supabase->from($parsedQuery['table'])
-                    ->insert($parsedQuery['data'])
-                    ->execute();
+        try {
+            switch ($parsedQuery['type']) {
+                case 'select':
+                    $url = $parsedQuery['table'];
+                    $params = ['select' => $parsedQuery['columns']];
                     
-            case 'update':
-                $query = $this->supabase->from($parsedQuery['table'])
-                    ->update($parsedQuery['data']);
+                    if (!empty($parsedQuery['where'])) {
+                        foreach ($parsedQuery['where'] as $condition) {
+                            $params[$condition['column']] = 'eq.' . $condition['value'];
+                        }
+                    }
                     
-                if (!empty($parsedQuery['where'])) {
-                    foreach ($parsedQuery['where'] as $condition) {
-                        $query = $query->eq($condition['column'], $condition['value']);
+                    $response = $this->httpClient->get($url, ['query' => $params]);
+                    return json_decode($response->getBody()->getContents(), true);
+                    
+                case 'insert':
+                    $response = $this->httpClient->post($parsedQuery['table'], [
+                        'json' => $parsedQuery['data']
+                    ]);
+                    return json_decode($response->getBody()->getContents(), true);
+                    
+                case 'update':
+                    $url = $parsedQuery['table'];
+                    $params = [];
+                    
+                    if (!empty($parsedQuery['where'])) {
+                        foreach ($parsedQuery['where'] as $condition) {
+                            $params[$condition['column']] = 'eq.' . $condition['value'];
+                        }
                     }
-                }
-                
-                return $query->execute();
-                
-            case 'delete':
-                $query = $this->supabase->from($parsedQuery['table']);
-                
-                if (!empty($parsedQuery['where'])) {
-                    foreach ($parsedQuery['where'] as $condition) {
-                        $query = $query->eq($condition['column'], $condition['value']);
+                    
+                    $response = $this->httpClient->patch($url, [
+                        'json' => $parsedQuery['data'],
+                        'query' => $params
+                    ]);
+                    return json_decode($response->getBody()->getContents(), true);
+                    
+                case 'delete':
+                    $url = $parsedQuery['table'];
+                    $params = [];
+                    
+                    if (!empty($parsedQuery['where'])) {
+                        foreach ($parsedQuery['where'] as $condition) {
+                            $params[$condition['column']] = 'eq.' . $condition['value'];
+                        }
                     }
-                }
-                
-                return $query->delete()->execute();
+                    
+                    $response = $this->httpClient->delete($url, ['query' => $params]);
+                    return json_decode($response->getBody()->getContents(), true);
+            }
+        } catch (RequestException $e) {
+            throw new \Exception('Supabase API Error: ' . $e->getMessage());
         }
         
         throw new \Exception("Unknown query type");
@@ -340,7 +374,9 @@ class SupabaseConnection implements ConnectionInterface
         $this->querySuccess = false;
         $this->errorMessage = $e->getMessage();
         
-        trigger_error($e->getMessage(), E_USER_WARNING);
+        if ($this->logger) {
+            $this->logger->error($e->getMessage());
+        }
         
         return new Result();
     }

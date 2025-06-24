@@ -3,7 +3,6 @@
 
 namespace Gibbon\Database;
 
-use Supabase\CreateClient;
 use Gibbon\Database\Connection;
 use Gibbon\Database\SupabaseConnection;
 
@@ -23,12 +22,11 @@ class SupabaseConnector
     public function connect(array $config, bool $throw_on_error = false)
     {
         try {
-            $supabaseUrl = $config['supabaseUrl'];
-            $supabaseKey = $config['supabaseKey'];
+            if (empty($config['supabaseUrl']) || empty($config['supabaseKey'])) {
+                throw new \Exception('Supabase URL and Key are required');
+            }
             
-            $supabase = CreateClient::create($supabaseUrl, $supabaseKey);
-            
-            return new SupabaseConnection($supabase, $config);
+            return new SupabaseConnection($config);
         } catch (\Exception $e) {
             if ($throw_on_error) {
                 throw $e;
