@@ -1,21 +1,16 @@
 
 <?php
 // Gibbon: the flexible, open school platform
-// Configuration file for Supabase
-
-// Supabase Configuration (placeholder - replace with actual values)
-$supabaseUrl = '';
-$supabaseKey = '';
-$supabaseServiceKey = '';
+// Configuration file for local development with SQLite
 
 // System Configuration
 $guid = 'gibbon-' . uniqid();
 
-// Database connection for development
-$databaseServer = 'localhost';
-$databaseName = 'gibbon_dev';
-$databaseUsername = 'gibbon';
-$databasePassword = 'gibbon123';
+// Database connection using SQLite (no server required)
+$databaseServer = '';
+$databaseName = './gibbon_dev.db';
+$databaseUsername = '';
+$databasePassword = '';
 $databasePort = '';
 
 // Get the current URL dynamically
@@ -30,10 +25,13 @@ $organisationName = 'Your School Name';
 $organisationNameShort = 'Your School';
 $timezone = 'UTC';
 
-// Installation check
-$installed = true;
+// Installation check - set to false to trigger installer
+$installed = false;
 $installing = false;
 
 // Version
 $version = 'v26.0.00';
+
+// Database settings for SQLite
+$databaseEngine = 'sqlite';
 ?>

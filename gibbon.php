@@ -78,16 +78,47 @@ if (!$gibbon->isInstalled() && !$gibbon->isInstalling()) {
 if ($gibbon->isInstalled()) {
     $pdo = null;
     
-    // Use MySQL connector for now (Supabase setup incomplete)
-    $mysqlConnector = new Gibbon\Database\MySqlConnector();
-
-    // Connect to MySQL/MariaDB
-    $pdo = $mysqlConnector->connect($gibbon->getConfig());
-    if ($pdo) {
-        // Add the database to the container
-        $connection2 = $pdo->getConnection();
-        $container->add('db', $pdo);
-        $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+    // Check if SQLite database file is configured
+    $databaseName = $gibbon->getConfig('databaseName');
+    if (strpos($databaseName, '.db') !== false || strpos($databaseName, '.sqlite') !== false) {
+        // Use SQLite - create a simple PDO connection
+        try {
+            $connection2 = new PDO('sqlite:' . $databaseName);
+            $connection2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Create a simple wrapper for compatibility
+            $pdo = new class($connection2) {
+                private $pdo;
+                
+                public function __construct($pdo) {
+                    $this->pdo = $pdo;
+                }
+                
+                public function getConnection() {
+                    return $this->pdo;
+                }
+                
+                public function selectOne($sql, $params = []) {
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute($params);
+                    return $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+            };
+            
+            $container->add('db', $pdo);
+            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+        } catch (PDOException $e) {
+            $pdo = null;
+        }
+    } else {
+        // Use MySQL connector for other databases
+        $mysqlConnector = new Gibbon\Database\MySqlConnector();
+        $pdo = $mysqlConnector->connect($gibbon->getConfig());
+        if ($pdo) {
+            $connection2 = $pdo->getConnection();
+            $container->add('db', $pdo);
+            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+        }
     }
 
     if ($pdo) {
