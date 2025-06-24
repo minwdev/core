@@ -89,24 +89,8 @@ if ($gibbon->isInstalled()) {
             $connection2 = new PDO('sqlite:' . $databaseName);
             $connection2->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            // Create a simple wrapper for compatibility
-            $pdo = new class($connection2) {
-                private $pdo;
-                
-                public function __construct($pdo) {
-                    $this->pdo = $pdo;
-                }
-                
-                public function getConnection() {
-                    return $this->pdo;
-                }
-                
-                public function selectOne($sql, $params = []) {
-                    $stmt = $this->pdo->prepare($sql);
-                    $stmt->execute($params);
-                    return $stmt->fetch(PDO::FETCH_ASSOC);
-                }
-            };
+            // Create a proper SQLite connection wrapper
+            $pdo = new Gibbon\Database\SqliteConnection($connection2);
             
             $container->add('db', $pdo);
             $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
