@@ -76,12 +76,15 @@ if (!$gibbon->isInstalled() && !$gibbon->isInstalling()) {
 
 // Initialize the database connect
 if ($gibbon->isInstalled()) {
+    $pdo = null;
+    
     // Check if using Supabase or MySQL
     if (!empty($gibbon->getConfig('supabaseUrl'))) {
         $supabaseConnector = new Gibbon\Database\SupabaseConnector();
 
         // Connect to Supabase
-        if ($pdo = $supabaseConnector->connect($gibbon->getConfig())) {
+        $pdo = $supabaseConnector->connect($gibbon->getConfig());
+        if ($pdo) {
             $connection2 = $pdo->getConnection();
             $container->add('db', $pdo);
             $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
@@ -90,7 +93,8 @@ if ($gibbon->isInstalled()) {
         $mysqlConnector = new Gibbon\Database\MySqlConnector();
 
         // Display a static error message for database connections after install.
-        if ($pdo = $mysqlConnector->connect($gibbon->getConfig())) {
+        $pdo = $mysqlConnector->connect($gibbon->getConfig());
+        if ($pdo) {
             // Add the database to the container
             $connection2 = $pdo->getConnection();
             $container->add('db', $pdo);
@@ -98,6 +102,7 @@ if ($gibbon->isInstalled()) {
         }
     }
 
+    if ($pdo) {
         // Add a feature flag here to prevent errors before updating
         // TODO: this can likely be removed in v24+
         if (!defined('SESSION_TABLE_AVAILABLE')) {
