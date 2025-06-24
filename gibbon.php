@@ -128,7 +128,15 @@ if ($gibbon->isInstalled()) {
         // Add a feature flag here to prevent errors before updating
         // TODO: this can likely be removed in v24+
         if (!defined('SESSION_TABLE_AVAILABLE')) {
-            $hasSessionTable = $pdo->selectOne("SHOW TABLES LIKE 'gibbonSession'");
+            // Check if we're using SQLite or MySQL for the correct syntax
+            $databaseName = $gibbon->getConfig('databaseName');
+            if (strpos($databaseName, '.db') !== false || strpos($databaseName, '.sqlite') !== false) {
+                // SQLite syntax
+                $hasSessionTable = $pdo->selectOne("SELECT name FROM sqlite_master WHERE type='table' AND name='gibbonSession'");
+            } else {
+                // MySQL syntax
+                $hasSessionTable = $pdo->selectOne("SHOW TABLES LIKE 'gibbonSession'");
+            }
             define('SESSION_TABLE_AVAILABLE', !empty($hasSessionTable));
         }
 
