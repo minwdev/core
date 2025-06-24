@@ -40,6 +40,20 @@ class Config
     private $databasePassword = null;
 
     /**
+     * Supabase URL.
+     *
+     * @var string|null
+     */
+    private $supabaseUrl = null;
+
+    /**
+     * Supabase API Key.
+     *
+     * @var string|null
+     */
+    private $supabaseKey = null;
+
+    /**
      * Should the demo data be installed along.
      *
      * @var boolean|null
@@ -116,6 +130,21 @@ class Config
     }
 
     /**
+     * Set the Supabase configuration.
+     *
+     * @param string $supabaseUrl
+     * @param string $supabaseKey
+     *
+     * @return self
+     */
+    public function setSupabaseInfo(string $supabaseUrl, string $supabaseKey): Config
+    {
+        $this->supabaseUrl = $supabaseUrl;
+        $this->supabaseKey = $supabaseKey;
+        return $this;
+    }
+
+    /**
      * Set guid to the given string, or random set the
      * guid.
      *
@@ -148,8 +177,21 @@ class Config
      */
     public function getVars(): array
     {
-        return $this->getDatabaseInfo() + [
+        return $this->getDatabaseInfo() + $this->getSupabaseInfo() + [
             'guid' => $this->getGuid(),
+        ];
+    }
+
+    /**
+     * Get Supabase related configurations.
+     *
+     * @return array
+     */
+    public function getSupabaseInfo(): array
+    {
+        return [
+            'supabaseUrl' => $this->supabaseUrl,
+            'supabaseKey' => $this->supabaseKey,
         ];
     }
 

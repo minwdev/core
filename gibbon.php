@@ -74,16 +74,29 @@ if (!$gibbon->isInstalled() && !$gibbon->isInstalling()) {
     exit;
 }
 
-// Initialize the database connection
+// Initialize the database connect
 if ($gibbon->isInstalled()) {
-    $mysqlConnector = new Gibbon\Database\MySqlConnector();
+    // Check if using Supabase or MySQL
+    if (!empty($gibbon->getConfig('supabaseUrl'))) {
+        $supabaseConnector = new Gibbon\Database\SupabaseConnector();
 
-    // Display a static error message for database connections after install.
-    if ($pdo = $mysqlConnector->connect($gibbon->getConfig())) {
-        // Add the database to the container
-        $connection2 = $pdo->getConnection();
-        $container->add('db', $pdo);
-        $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+        // Connect to Supabase
+        if ($pdo = $supabaseConnector->connect($gibbon->getConfig())) {
+            $connection2 = $pdo->getConnection();
+            $container->add('db', $pdo);
+            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+        }
+    } else {
+        $mysqlConnector = new Gibbon\Database\MySqlConnector();
+
+        // Display a static error message for database connections after install.
+        if ($pdo = $mysqlConnector->connect($gibbon->getConfig())) {
+            // Add the database to the container
+            $connection2 = $pdo->getConnection();
+            $container->add('db', $pdo);
+            $container->share(Gibbon\Contracts\Database\Connection::class, $pdo);
+        }
+    }
 
         // Add a feature flag here to prevent errors before updating
         // TODO: this can likely be removed in v24+
@@ -100,7 +113,7 @@ if ($gibbon->isInstalled()) {
             include __DIR__.'/error.php';
             exit;
         }
-        
+
     } else {
         if (!$gibbon->isInstalling()) {
             $message = sprintf(__('A database connection could not be established. Please %1$stry again%2$s.'), '', '');
@@ -152,7 +165,7 @@ $tokenHandler = $container->get(TokenHandler::class);
 
 // Check for CSRF token and nonce when posting any form
 if (!empty($_POST) && count($_POST) > 1 && stripos($_SERVER['PHP_SELF'], 'Process.php') !== false) {
-    
+
     // Validate CSRF token
     if (!$tokenHandler->validateCsrfToken()) {
         $URL = $_SERVER['HTTP_REFERER'].'&return=error9';
@@ -167,5 +180,3 @@ if (!empty($_POST) && count($_POST) > 1 && stripos($_SERVER['PHP_SELF'], 'Proces
         exit;
     }
 }
-
-
