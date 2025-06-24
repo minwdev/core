@@ -15,13 +15,11 @@ $databasePort = '';
 
 // Get the current URL dynamically
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost:5000';
+$host = $_SERVER['HTTP_HOST'];
 $absoluteURL = $protocol . '://' . $host;
-$absolutePath = __DIR__;
 
-// System settings
-$systemName = 'Gibbon';
-$organisationName = 'Your School Name';
+$absolutePath = __DIR__;
+$organisationName = 'Your School';
 $organisationNameShort = 'Your School';
 $timezone = 'UTC';
 
