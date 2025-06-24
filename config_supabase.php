@@ -27,7 +27,7 @@ $timezone = 'UTC';
 
 // Installation check - set to false to trigger installer
 $installed = false;
-$installing = false;
+$installing = true;
 
 // Version
 $version = 'v26.0.00';

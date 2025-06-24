@@ -72,6 +72,9 @@ if (!$gibbon->isInstalled() && !$gibbon->isInstalling()) {
     define('SESSION_TABLE_AVAILABLE', false);
     header("Location: ./installer/install.php");
     exit;
+} elseif (!$gibbon->isInstalled() && $gibbon->isInstalling()) {
+    define('SESSION_TABLE_AVAILABLE', false);
+    // Allow installer to run
 }
 
 // Initialize the database connect
